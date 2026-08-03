@@ -1,0 +1,20 @@
+{
+  "name": "my-ziwei-chart",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "bin": {
+    "ziwei-json": "bin/ziwei-json.js"
+  },
+  "scripts": {
+    "test": "node --test",
+    "chart": "node bin/ziwei-json.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "iztro": "^2.5.8",
+    "lunar-typescript": "^1.8.6"
+  }
+}
