@@ -1,110 +1,137 @@
 # Chinese Astrology Birth Chart JSON
 
-Generate auditable, AI-ready Zi Wei Dou Shu (紫微斗數) and Bazi
-(八字/Four Pillars) charts as structured JSON from a local birth time,
-timezone, and location.
+**紫微斗数 · 八字 · Structured chart data for applications and AI analysis**
 
-This is a data-only command-line tool. It does not render a chart, assign
-fortune scores, or produce an interpretation. The resulting JSON is intended
-for analysis by an AI or another application.
+Turn a recorded birth time, coordinates and timezone into a traceable Chinese
+astrology chart. Generate a natal chart, inspect six time layers at a target
+instant, or export separate JSON files for every 大限, 流年 and 流月 in the
+supported lifecycle.
 
-Ziwei calculation uses [iztro](https://github.com/SylarLong/iztro). Bazi uses
-[`lunar-typescript`](https://github.com/6tail/lunar-typescript). The adapter
-also makes relationships normally communicated by a rendered Ziwei chart
-explicit, including 借宮, 三方四正, 宮干飛化, and 自化.
+The project grew out of a practical problem: chart images are convenient for
+people, but an AI can misread a star, palace or time layer. Here, those facts
+and relationships are explicit data, with the inputs and calculation rules
+preserved for checking. The CLI runs locally and makes no AI service calls.
 
-## Install
+[Quick start](#quick-start) · [Output modes](#choose-an-output-mode) ·
+[JSON guide](#understand-the-json) · [CLI reference](#cli-reference) ·
+[Calculation rules](#calculation-rules) · [Verification](#accuracy-and-verification) ·
+[Privacy](#privacy) · [Development](#development)
+
+## Why this project
+
+- **Use chart data directly.** Read palace positions, stars, brightness and
+  transformations without extracting them from an image.
+- **Keep time layers separate.** Natal positions stay fixed; each time layer
+  supplies its palace mapping, dynamic stars and transformation destinations.
+- **Follow the relationships.** 借宫, 三方四正, 宫干飞化 and 自化 have explicit
+  references instead of relying on a chart's visual layout.
+- **Check how a result was produced.** Birth inputs, time correction, engine
+  versions and effective conventions accompany the data. Batch manifests add
+  file hashes, identities and time intervals.
+
+It is useful for chart-reading applications, AI-assisted analysis, rule
+comparison and reproducible software tests. The output contains calculation
+facts; interpretation and fortune scoring belong to the consuming application.
+
+Ziwei calculation uses [iztro](https://github.com/SylarLong/iztro); calendar
+conversion and standalone Bazi use
+[lunar-typescript](https://github.com/6tail/lunar-typescript). This repository
+adds time handling, structured relationships, provenance and batch export.
+
+## Quick start
+
+Use **Node.js 22** and npm. The documented examples were checked on Node
+22.22.3; the project does not currently declare a minimum version or a wider
+runtime support matrix.
 
 ```sh
-npm install
+git clone https://github.com/JasonHuang1103/chinese-astrology-birth-chart.git
+cd chinese-astrology-birth-chart
+npm ci
 ```
 
-The calculation dependencies are pinned to iztro 2.5.8 and lunar-typescript
-1.8.6 so an installation does not silently change the documented rule tables.
+Run commands from the repository root. All examples below use the same
+**synthetic birth input**: 2000-08-16, 14:30, latitude 0, longitude 120,
+timezone `Asia/Taipei`. Ziwei examples specify `female`; Bazi does not
+require gender. The committed reference fixtures also use synthetic inputs.
 
-## Generate a natal Ziwei chart
-
-Ziwei is the default system:
+Generate your first natal chart:
 
 ```sh
+mkdir -p output
+
 node bin/ziwei-json.js \
   --date 2000-08-16 \
-  --time 02:30 \
+  --time 14:30 \
   --gender female \
-  --latitude 25.033 \
-  --longitude 121.5654 \
+  --latitude 0 \
+  --longitude 120 \
   --time-zone Asia/Taipei \
-  > ziwei-natal.json
+  > output/example-natal.json
 ```
 
-`--system ziwei --ziwei-output natal` is equivalent to the default.
-
-The natal document preserves the original normalized `chart` structure and
-adds a separate `ziwei_addon` sibling containing:
-
-- `palace_relations` — empty palaces, opposite and adjacent palaces, 借宮,
-  axes, and complete 三方四正 star locations.
-- `transformations.birth_year_transformations` — explicit 生年祿權科忌
-  destinations.
-- `transformations.palace_stem_flights` — four 宮干飛化 edges for each of
-  the twelve palaces.
-- `transformations.self_transformations` — direct 自化 lookup records.
-- `indexes` — palace, star, empty-palace, axis, and transformation reverse
-  indexes for efficient machine analysis.
-
-Borrowed stars are references to the opposite palace. They are never inserted
-into the original palace's natal star arrays.
-
-## Generate a Ziwei horoscope snapshot
-
-Use `--ziwei-output horoscope` with a target local civil date and time:
+Read it with Node, without installing another tool:
 
 ```sh
+node -e "const doc = require('./output/example-natal.json'); console.log(doc.chart.palaces.length)"
+# 12
+```
+
+The calculation dependencies are pinned to **iztro 2.5.8** and
+**lunar-typescript 1.8.6**. `npm ci` installs the committed dependency lockfile.
+
+## Choose an output mode
+
+| Need | Mode | Result |
+| --- | --- | --- |
+| Read one birth chart | Ziwei `natal` — default | One JSON containing the natal chart and derived relationships |
+| Inspect a particular date and time | Ziwei `horoscope` | One self-contained natal document plus six time scopes |
+| Work with every 大限, 流年 and 流月 | Ziwei `batch` | Files organized by name and layer, plus a manifest |
+| Read Four Pillars | `--system bazi` | One standalone Bazi JSON document |
+
+### Natal chart · 本命
+
+The [quick-start command](#quick-start) uses the default
+`--system ziwei --ziwei-output natal`.
+
+The document includes twelve palaces, palace stems and branches, 命宫, 身宫,
+五行局, 命主 and 身主; main, auxiliary and miscellaneous stars; available
+brightness classifications; and the natal decadal age schedule.
+`ziwei_addon` adds 生年四化, 宫干飞化, 自化, empty-palace and borrowed-palace
+relations, 三方四正 and lookup indexes.
+
+A natal palace's decadal age range describes the schedule. Use batch mode
+for the complete dynamic chart of each decadal.
+
+### Target snapshot · 运限快照
+
+```sh
+mkdir -p output
+
 node bin/ziwei-json.js \
-  --system ziwei \
+  --date 2000-08-16 \
+  --time 14:30 \
+  --gender female \
+  --latitude 0 \
+  --longitude 120 \
+  --time-zone Asia/Taipei \
   --ziwei-output horoscope \
-  --date 2000-08-16 \
-  --time 02:30 \
-  --gender female \
-  --latitude 25.033 \
-  --longitude 121.5654 \
-  --time-zone Asia/Taipei \
   --target-date 2026-08-03 \
   --target-time 14:30 \
-  > ziwei-horoscope.json
+  > output/example-horoscope.json
 ```
 
-The horoscope JSON is self-contained: it includes the complete natal `chart`
-and `ziwei_addon`, then adds all six time scopes returned by iztro:
+`horoscope.scopes` contains `decadal` 大限, `age` 小限, `yearly` 流年,
+`monthly` 流月, `daily` 流日 and `hourly` 流时. The yearly layer also includes
+将前十二神 and 岁前十二神. `palace_overlays` and `scope_relations` make
+layer-specific positions, transformations, 借宫 and 三方四正 queryable.
 
-- `decadal` — 大限
-- `age` — 小限 and nominal age
-- `yearly` — 流年, including 將前十二神 and 歲前十二神
-- `monthly` — 流月
-- `daily` — 流日
-- `hourly` — 流時
+The target is local civil time in the birth input's timezone. It receives
+no apparent-solar correction. It must be at or after the recorded birth
+instant. This combined six-scope mode is limited by the engine's minor-limit
+age table, currently nominal ages 1–120.
 
-Natal stars and natal palace positions remain fixed. Each scope supplies a
-twelve-palace name mapping, four transformation destinations, and dynamic
-stars. `palace_overlays` collects these layers at each fixed natal position,
-while `scope_relations` makes scope-aware 借宮 and 三方四正 directly
-queryable.
-
-The target time is interpreted as local civil time in `--time-zone` and is
-converted directly to a Chinese-hour index. Apparent-solar correction is not
-applied to the target time; this convention is recorded in
-`horoscope.target`.
-
-This is a snapshot for one target date, not a batch export of every decadal,
-year, or lunar month. The natal palaces list all twelve decadal age ranges,
-but they do not contain twelve complete dynamic decadal charts. Targets before
-the recorded birth date/time or outside an engine-supported scope are rejected.
-The combined six-scope snapshot currently requires a valid minor-limit age
-(nominal ages 1–120), even when the final natal decadal extends past age 120.
-
-## Export every decadal, year, and lunar month
-
-Use batch mode with a name to export into `output/<name>/`:
+### Full lifecycle export · 本命、大限、流年、流月
 
 ```sh
 node bin/ziwei-json.js \
@@ -118,184 +145,418 @@ node bin/ziwei-json.js \
   --name example
 ```
 
-Batch mode exports the complete twelve-decadal schedule, from the recorded
-birth instant through the lunar New Year following the final decadal. The
-last age depends on the five-elements class and can reach nominal age 125.
-Batch layers do not request the unrelated minor-limit scope, so they include
-valid final-decadal years after age 120. Do not supply snapshot target flags.
+This creates a **new** `output/example/` directory relative to the current
+working directory:
 
-Paths below are relative to `output/example/`. Names are directory labels,
-preserved as `name` in each layer document; they do not affect calculations.
+```text
+output/example/
+├── 本命/
+│   └── 紫微.json
+├── 大限/
+│   ├── 01.json
+│   └── … 12.json
+├── 流年/
+│   ├── 2000.json
+│   └── …
+├── 流月/
+│   ├── 2000-07.json
+│   ├── …
+│   ├── 2025-06.json
+│   ├── 2025-06-leap.json
+│   └── …
+└── manifest.json
+```
 
-| Path | Contents |
-| --- | --- |
-| `本命/紫微.json` | Complete natal chart, addon, birth inputs and calculation provenance |
-| `大限/01.json` … `12.json` | Each decadal's scope, transformations, dynamic stars and palace relationships |
-| `流年/<lunar-year>.json` | Every lunar year, clipped at birth where necessary |
-| `流月/<year>-<month>.json` | Each actual regular lunar month |
-| `流月/<year>-<month>-leap.json` | Each leap month, with separate state segments before and from day 16 |
-| `manifest.json` | Chart identity, file list, periods, statistics, rules and SHA-256 hashes |
+Batch exports cover all **twelve natal decadals**, plus every lunar year
+and actual lunar month from the recorded birth instant to the lunar New Year
+following the final decadal. The maximum nominal age depends on 五行局 and
+can reach 125. Batch mode requests only the required scopes, so the
+six-scope snapshot's age-120 ceiling does not truncate the final decadal.
 
-Layer files share the complete natal data through `natal_ref`; load that file
-to resolve natal stars and natal flights. Monthly files also reference their
-year and applicable decadal. Each file has a stable `chart_id` and `layer_id`.
-The identity includes birth inputs, effective calculation rules and provenance;
-it excludes the name, export directory and snapshot arguments.
+For the exact synthetic input above, the result is **1,679 JSON files**:
+1 natal, 12 decadal, 125 yearly, 1,540 monthly and 1 manifest. File counts
+vary with the birth input. Standard output is one summary JSON containing
+`output_directory`, `manifest`, `statistics`, `range` and `chart_id`.
 
-`--name` must be a single directory name; Chinese names are supported.
-The default `output/` parent is created automatically and is ignored by Git.
-Local `output/`, `outputs/` and `generated/` directories are private and must
-not be committed. JSON files are ignored throughout the repository except
-for package metadata and the reviewed synthetic reference fixture, so JSON
-exports in custom destinations are also excluded. Check staged files before
-pushing; ignore rules do not remove files that Git already tracks.
-To choose a different destination, `--output-dir ./ziwei-export` still
-specifies the exact personal export directory, with or without `--name`;
-its parent must already exist. This layout replaces the former
-`natal.json`, `decadals/`, `years/` and `months/` batch paths, so consumers
-should resolve files through the new manifest and relative references.
+`--name` is a single directory label, supports Chinese characters and does
+not affect chart calculation. To select a different location, use
+`--output-dir ./my-export`; it specifies the **exact** destination, without
+appending the name, and its parent must already exist. The default `output/`
+parent is created automatically. Neither destination may already exist,
+even as an empty directory or symlink. Snapshot target flags are not accepted
+in batch mode.
 
-Periods preserve both natural boundaries and valid intervals clipped to birth
-and the lifecycle end. UTC intervals are half-open `[start,end)`, with local
-date, time and UTC offset also recorded. A nonexistent midnight advances to
-the first existing minute; a repeated midnight selects its first occurrence.
-These period boundaries use the local civil lunar calendar, not birth-time
-solar correction. Leap months retain one calendar identity even when their
-two segments use different monthly scopes.
+See [batch references and periods](#batch-references-and-periods) for consuming
+these files and [privacy](#privacy) before sharing them.
 
-Before the first decadal, year/month files use `decadal_ref: null` with an
-explicit reason. If birth-time correction crosses lunar New Year, the initial
-civil-time fragment can have nominal age zero or start at age two relative to
-the effective birth year; the export preserves it without inventing a
-childhood decadal. No separate childhood-decadal file is emitted.
-
-Batch mode currently requires `yearDivide`, `horoscopeDivide` and `ageDivide`
-to be `normal`; unsupported settings are rejected. Existing paths, including
-empty directories and symlinks, are rejected. Generation and reference/hash
-checks finish in a private temporary sibling directory before publication.
-`manifest.json` is published last; an interrupted publication can leave a
-partial new directory without a manifest, which must not be treated as a
-completed export. Existing exports are never replaced.
-
-The example above produces 1,679 JSON files: one natal, twelve decadal,
-125 yearly, 1,540 monthly and one manifest. Counts vary with birth date and
-five-elements class. Standard output contains one compact JSON result with
-the output directory and statistics.
-
-## Generate a Bazi chart
-
-Use `--system bazi` to generate a separate Bazi document. Bazi output does not
-contain Ziwei data and does not require gender:
+### Four Pillars · 八字
 
 ```sh
+mkdir -p output
+
 node bin/ziwei-json.js \
   --system bazi \
   --date 2000-08-16 \
-  --time 02:30 \
-  --latitude 25.033 \
-  --longitude 121.5654 \
+  --time 14:30 \
+  --latitude 0 \
+  --longitude 120 \
   --time-zone Asia/Taipei \
-  > bazi.json
+  > output/example-bazi.json
 ```
 
-The Bazi document provides the year, month, day, and hour pillars, including
-stems, branches, hidden stems, five elements, ten gods, NaYin, Chang Sheng,
-Xun, and Xun Kong. It also includes 胎元, 胎息, 命宮, and 身宮 with their
-NaYin values.
+Bazi does not require gender. Its four pillars include stems, branches,
+hidden stems, five elements, ten gods, 纳音, 长生, 旬 and 旬空. Auxiliary
+data includes 胎元, 胎息, 命宫 and 身宫 with their 纳音. The source records
+`day_boundary_sect: 2`.
 
-Bazi uses `lunar-typescript`'s `sect: 2` day-boundary convention. This
-convention and the birth-time correction are recorded so the calculation is
-auditable.
+Bazi currently has single-document output. You may store it alongside a
+person's Ziwei export as `output/<name>/本命/八字.json`; the Ziwei manifest
+does not index or hash that separately generated file.
 
-An existing person's Bazi document can be stored alongside their Ziwei
-export as `output/<name>/本命/八字.json`. The batch manifest indexes Ziwei
-layers only; a separately generated Bazi document is not included in its
-file counts or hashes.
+## Understand the JSON
 
-## Birth input and time correction
+Keys use English identifiers. Ziwei chart terms use traditional Chinese
+(`zh-TW`); Bazi values retain `lunar-typescript`'s native wording.
+Ziwei palace indexes are zero-based fixed positions.
+Time layers change the palace-name mapping at those positions, while natal
+stars remain in their original arrays.
 
-Required birth inputs:
+### A concrete example
 
-- `--date` — local Gregorian birth date in `YYYY-MM-DD`.
-- `--time` — recorded local birth time in 24-hour `HH:mm`.
-- `--gender` — `male` or `female`; required only for Ziwei.
-- `--latitude` — decimal degrees from -90 to 90, recorded as birthplace
-  provenance.
-- `--longitude` — decimal degrees from -180 to 180, used for birth-time solar
-  correction.
-- `--time-zone` — an IANA zone such as `Asia/Taipei`, used to resolve the
-  historical UTC offset.
+For the quick-start input, the life palace is `chart.palaces[11]`. These are
+selected fields from the actual generated palace:
 
-The generator adjusts recorded birth time using an equation-of-time
-approximation and the longitude difference from the timezone's standard
-meridian. It preserves the entered civil time, correction components,
-apparent-solar time, and resulting Chinese-hour index in the JSON. Latitude
-is retained as provenance but is not part of this longitude-based correction.
+```json
+{
+  "index": 11,
+  "name": "命宮",
+  "heavenly_stem": "己",
+  "earthly_branch": "丑",
+  "stars": {
+    "major": [
+      {
+        "name": "天府",
+        "type": "major",
+        "scope": "origin",
+        "brightness": "廟",
+        "mutagen": null
+      }
+    ]
+  }
+}
+```
 
-The offset includes any historical daylight-saving adjustment. Longitude
-differences are normalized modulo 360 degrees so equivalent east/west
-longitudes do not shift the birth date by a full day. Historical offsets
-containing seconds are preserved as fractional minutes. Nonexistent or
-ambiguous civil times are rejected.
+The same document explicitly locates birth-year 化禄. Selected fields from
+`ziwei_addon.transformations.birth_year_transformations[0]`:
 
-The correction targets minute-level charting use, not observatory-grade solar
-ephemerides. Its equation-of-time approximation has not been validated against
-an astronomical reference ephemeris; births near hour/day boundaries need
-additional checking. Ziwei accepts Gregorian birth dates on or after
-1582-10-15, with the corrected date also in that range, to avoid mixing
-proleptic Gregorian input with the engine's earlier Julian-calendar dates.
-Corrections outside the four-digit year range are rejected.
+```json
+{
+  "transformation": "祿",
+  "star": "太陽",
+  "star_category": "major",
+  "target_palace": {
+    "index": 10,
+    "name": "兄弟"
+  }
+}
+```
 
-## Calculation provenance and verification limits
+This lets a consumer distinguish the transformation's star, destination
+and layer. A borrowed star is likewise a reference to another palace;
+`materialized_into_chart: false` makes clear it was not inserted as an
+actual occupant of the empty palace.
 
-Ziwei JSON includes `calculation_conventions`: a snapshot of the effective
-`iztro` configuration (including custom table overrides), leap-month handling,
-the natal time basis, and Node/ICU/timezone-data versions. `source.version`
-reports the installed engine version. These are additive fields; existing
-`chart`, `ziwei_addon`, and `horoscope` structures remain available.
+### Field map
 
-With the default installed iztro 2.5.8 configuration, year boundaries use lunar
-New Year, late Zi hour uses `dayDivide: forward`, and leap-month adjustment is
-enabled. The adapter now applies the late-Zi date change to the entire birth
-date before conversion and placement: a late-Zi time and the following early
-Zi time use the same effective lunar year, month and day, including at leap
-month and lunar-year boundaries. Original birth inputs, apparent solar date,
-hour index 12 and the late-Zi display label are preserved. `chart.lunar_date_details`
-records the apparent civil date; `chart.calculation_lunar_date_details` records
-the effective date and the month used for palace placement. This intentionally
-changes affected older outputs. See the [rule derivation and sources](docs/references/ziwei-late-zi-convention.md).
+| JSON path | Meaning |
+| --- | --- |
+| `schema_version` | Document format version, currently `1.0.0`; distinct from engine and adapter-rule versions |
+| `input` / `time_correction` | Recorded birth inputs and the correction used for calculation |
+| `source` / `calculation_conventions` | Engine information and effective Ziwei rules, including runtime provenance |
+| `chart` | Complete normalized natal Ziwei chart |
+| `ziwei_addon.palace_relations` | Empty palaces, neighbors, opposites, 借宫 and 三方四正 |
+| `ziwei_addon.transformations` | 生年四化, twelve sets of 宫干飞化, and 自化 |
+| `ziwei_addon.indexes` | Star, palace, axis and transformation lookup indexes |
+| `horoscope.scopes` | Six scopes in a target snapshot |
+| `scopes.decadal` / `scopes.yearly` | The requested scope in a batch decadal or yearly file |
+| `segments[i].scopes.monthly` | A monthly state segment in a batch month file |
+| `bazi.pillars` / `bazi.auxiliary` | Four Pillars and auxiliary Bazi data |
 
-`calculation_conventions.table_variants` explicitly records differences
-from the cited classical transcription: the default table uses 左輔 for
-壬年化科 and 天魁午／天鉞寅 for 辛年. The independent fixtures preserve the
-classical values and verify these declared variants separately. A third entry
-records the uncollated 丙丁天鉞 “猪狗／猪雞” transcription difference; the
-adopted 酉 placement is separately supported by an independent implementation,
-not presented as agreement with the cited classical transcription.
-Brightness `null` means the engine did not provide a value; it does
-not establish that the star has no brightness classification in every school.
+Batch layer files reference the shared natal document. Load it to obtain
+the natal stars and flights; those arrays are not duplicated into every
+monthly file. **A batch monthly document has `segments`, not root-level
+`scopes.monthly`.**
 
-The test suite includes independent fixed natal references derived from
-[Hong Kong Observatory calendars](https://www.hko.gov.hk/tc/gts/time/conversion1_text.htm)
-and the cited classical placement rules, late-Zi boundary pairs, synthetic
-matrices, date/time cases, full lifecycle export and actual CLI file checks.
-The fixed natal cases check absolute major-star positions, selected auxiliary
-stars and brightness values; they do not independently verify every minor
-star, brightness table, dynamic star or astronomical approximation. See the
-[implementation verification report](docs/audits/2026-10-19-ziwei-batch-implementation.md).
+### Batch references and periods
 
-## Output behavior
+Every batch file carries `schema_version`, `name`, `chart_id`, `layer_id`
+and `layer`. For example, `流月/2005-01.json` includes these references:
 
-The command writes exactly one JSON document to standard output (the compact
-export result in batch mode, or the chart in other modes). Keys are
-stable English identifiers; traditional-Chinese (`zh-TW`) chart terms are
-preserved as values.
+```json
+{
+  "natal_ref": "../本命/紫微.json",
+  "year_ref": "../流年/2005.json",
+  "decadal_ref": "../大限/01.json"
+}
+```
 
-`npm run --silent chart -- [flags]` is equivalent to invoking the executable.
-Use `--silent` when redirecting npm output so npm's command banner is not
-written alongside the JSON.
+Resolve a layer reference **relative to the file containing it**. Manifest
+file paths are relative to the export directory. `manifest.files` lists and
+hashes all data documents; `statistics.files` also counts the manifest itself.
+Check `chart_id` before combining files from different exports.
+Names and export paths are excluded from that identity; birth inputs, rules
+and provenance are included, so a runtime or rule change can change the ID.
 
-Programmatic callers can use `generateChart(input)` as before for natal and
-horoscope documents. With `ziweiOutput: 'batch'`, it returns the synchronous
-`generateZiweiBatch(input)` iterator of `{path, document}` items; it does not
-write files. `writeZiweiBatch(input)` performs filesystem export.
+Periods have two meanings:
+
+- `period.natural`: the full calendar period.
+- `period.valid`: the portion inside the birth-to-lifecycle-end range.
+
+Compare UTC endpoints as half-open intervals: **start ≤ instant < end**.
+Each endpoint also records local date, time, timezone and offset. The natal
+file has no time interval, so its natural and valid periods are `null`.
+Before the first decadal, `decadal_ref` is `null` with an explicit status;
+no separate childhood-decadal file is invented.
+
+**A 流月 filename uses the lunar year and month.** `2025-06-leap.json` is
+lunar leap month six, not Gregorian June. A regular month normally has one
+state segment. A leap month retains one file and calendar identity, with
+separate segments before and from lunar day 16. Birth clipping can leave
+only one of those segments.
+
+To select a month by a Gregorian instant, search its recorded interval
+instead of constructing a filename from the Gregorian month. After running
+the batch example, this script selects the second segment of leap month six:
+
+```js
+const fs = require('node:fs');
+const path = require('node:path');
+const read = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
+const contains = (period, utc) => period.start.utc <= utc && utc < period.end.utc;
+
+const base = path.resolve('output/example');
+const manifest = read(path.join(base, 'manifest.json'));
+const utc = new Date('2025-08-10T12:00:00+08:00').toISOString();
+const entry = manifest.files.find((file) =>
+  file.layer === 'monthly' && contains(file.period.valid, utc));
+if (!entry) throw new Error('Instant is outside this export');
+
+const monthFile = path.join(base, entry.path);
+const month = read(monthFile);
+const segment = month.segments.find((item) => contains(item.period.valid, utc));
+const natal = read(path.resolve(path.dirname(monthFile), month.natal_ref));
+
+console.log(entry.path);                    // 流月/2025-06-leap.json
+console.log(segment.lunar_day_range[0]);    // 16
+console.log(natal.chart.palaces.length);    // 12
+```
+
+Use `year_ref` and the applicable `decadal_ref` the same way to assemble the
+four layers needed for a particular month. For AI-assisted interpretation,
+keep each claim tied to its file, JSON path and time layer; the project's
+[analysis guidelines](AGENTS.md#方向二根据-json-进行命盘分析) describe that workflow.
+
+<details>
+<summary>Export integrity, exceptional boundaries and older layouts</summary>
+
+The writer generates files in a private temporary sibling directory, checks
+hashes and references, then publishes data files without overwriting existing
+paths. `manifest.json` is published last. The filesystem must support hard
+links. An interrupted publication may leave a partial new directory without
+a manifest; it is not a completed export and existing exports are never
+replaced automatically.
+
+For a missing local midnight, a batch boundary advances to the first existing
+minute; a repeated midnight uses its earlier occurrence. Birth correction
+across lunar New Year can produce an initial nominal-age-zero or age-two
+fragment; it remains in the export with an explicit decadal status.
+
+The Chinese directories replace the earlier `natal.json`, `decadals/`,
+`years/` and `months/` layout. Consumers should follow the current manifest
+and relative references. Detailed examples and boundary verification are in
+the [implementation report](docs/audits/2026-10-19-ziwei-batch-implementation.md).
+
+</details>
+
+## CLI reference
+
+Pass arguments as `--flag value` pairs, once each. The input date is
+**Gregorian**; conversion to the lunar calendar happens inside the engine.
+Birthplace is supplied as coordinates and an IANA timezone; city-name lookup
+and lunar-date input are not implemented.
+
+| Flag | Required / default | Format or behavior |
+| --- | --- | --- |
+| `--date` | All modes | Local Gregorian birth date, `YYYY-MM-DD` |
+| `--time` | All modes | Recorded birth time, 24-hour `HH:mm` |
+| `--latitude` | All modes | Decimal degrees, −90 to 90; retained as provenance |
+| `--longitude` | All modes | Decimal degrees, −180 to 180; used for solar correction |
+| `--time-zone` | All modes | IANA zone, for example `Asia/Taipei` |
+| `--gender` | Ziwei required; Bazi optional | `male` or `female` |
+| `--system` | `ziwei` | `ziwei` or `bazi` |
+| `--ziwei-output` | `natal` | Ziwei only: `natal`, `horoscope` or `batch` |
+| `--target-date` | Horoscope required | Target local Gregorian date, `YYYY-MM-DD` |
+| `--target-time` | Horoscope required | Target local time, `HH:mm` |
+| `--name` | Batch: name or directory required | Single directory label for `output/<name>/` |
+| `--output-dir` | Batch: name or directory required | Exact custom destination; overrides the default location |
+
+`--name` and `--output-dir` are batch-only. Target flags are horoscope-only.
+Bazi rejects all Ziwei output flags. Unknown, repeated and incomplete flags
+are rejected; there is currently no `--help` flag.
+
+The CLI writes exactly one JSON document to stdout: a chart, a snapshot or
+a batch summary. Errors go to stderr with a nonzero exit code. The npm
+shortcut is `npm run --silent chart -- [flags]`; keep `--silent` when
+redirecting JSON to avoid including npm's command banner.
+
+## Calculation rules
+
+The selected conventions are part of the data contract, and can differ
+from other schools or charting tools.
+
+| Topic | Current behavior |
+| --- | --- |
+| Birth time | Corrected to apparent solar time using longitude and an approximate equation of time; the actual historical UTC offset includes DST |
+| Latitude | Recorded, but not used in the longitude-based correction |
+| Ziwei target time and batch periods | Local civil time in the supplied timezone, without birth-time solar correction |
+| Ziwei year and month boundaries | Lunar New Year and actual lunar months under the default `normal` rules |
+| Ziwei late Zi · 晚子 | With `dayDivide: forward`, advance the entire effective date before conversion and placement; preserve the entered and apparent civil records |
+| Ziwei leap month · 闰月 | Adjustment enabled; lunar day 16 starts the next effective placement month, while the calendar month identity is retained |
+| Ziwei age | Nominal age based on the effective birth lunar year; batch permits valid final-decadal ages beyond 120 |
+| Bazi day boundary | `lunar-typescript` sect 2, recorded in `source.day_boundary_sect` |
+
+Nonexistent or ambiguous **input** civil times are rejected. Longitude
+correction is normalized across the date line; historical offset seconds are
+preserved as fractional minutes. Ziwei requires both recorded and corrected
+birth dates on or after **1582-10-15**. Corrected dates and complete batch
+lifecycles must remain within the supported four-digit year range.
+
+Ziwei records the effective engine configuration, leap-month policy, adapter
+rules and Node/ICU/timezone-data versions in `calculation_conventions`.
+`chart.lunar_date_details` describes the apparent civil date;
+`chart.calculation_lunar_date_details` describes the effective calculation
+date and palace-placement month. Batch mode requires `yearDivide`,
+`horoscopeDivide` and `ageDivide` to be `normal`; other configurations are
+explicitly rejected.
+
+The JSON also names known default-table differences from the cited classical
+transcription: 壬年化科 uses 左辅; 辛年 uses 天魁午／天钺寅. The 丙丁天钺
+“猪狗／猪雞” transcription remains uncollated; the adopted 酉 position has
+separate implementation support. These are declared table choices, not
+claims that all sources agree.
+
+See the [late-Zi convention](docs/references/ziwei-late-zi-convention.md) and
+[dynamic-layer conventions](docs/references/ziwei-dynamic-conventions.md) for
+derivations, references and explicitly retained differences.
+
+## Accuracy and verification
+
+**Traceable output is a way to inspect a calculation, not a proof that every
+traditional rule or real-world interpretation is correct.**
+
+| Verification | What it checks |
+| --- | --- |
+| Independent synthetic natal fixtures | HKO calendar anchors, absolute main-star positions, selected auxiliary stars, brightness and four transformations, with declared table differences |
+| Late-Zi and lunar boundaries | Seven fixed late/early-Zi pairs, leap-month transitions and lunar New Year |
+| Independent dynamic references | Decadal direction and ages, year/month palace mapping and four transformations, including final-decadal and leap-month cases |
+| Structural matrices and lifecycle exports | Star inventory, palace geometry, layer isolation, continuous periods, references and file hashes |
+| Actual CLI and writer behavior | Real output files, existing destinations, collisions, damaged staging data and publication failures |
+
+The equation-of-time approximation has **not** been validated against an
+authoritative astronomical ephemeris. Births near a Chinese-hour or date
+boundary need additional checking. Independent references do not cover every
+auxiliary or miscellaneous star, all brightness and dynamic-star tables,
+every date or every school. A brightness value of `null` means the engine
+provided no value; it does not establish universal inapplicability.
+
+For methods, sources, results and remaining limitations, read the
+[current verification report](docs/audits/2026-10-19-ziwei-batch-implementation.md).
+The [initial capability audit](docs/audits/2026-10-19-ziwei-capability-audit.md)
+is a historical record; its earlier gaps should be read alongside the
+subsequent implementation report.
+
+## Privacy
+
+Birth times, coordinates, chart data and interpretations can identify people.
+Keep generated files private. The CLI processes inputs locally; sharing a
+file with another application or AI service is a separate decision.
+
+The repository ignores `output/`, `outputs/`, `generated/` and JSON files
+throughout the tree, including custom export destinations. The only JSON
+exceptions are package metadata and the reviewed synthetic reference fixture.
+Ignore rules do not untrack an already committed file, and interpretation
+reports outside ignored directories still require manual review.
+
+Use synthetic inputs in issues and contributions. Before publishing changes,
+check both staged content and outgoing commit history for personal data.
+
+## Development
+
+Run the complete test suite:
+
+```sh
+npm test
+```
+
+For the additional synthetic lifecycle sampling audit:
+
+```sh
+node scripts/audit-ziwei-lifecycle.js
+```
+
+### Use the modules from a repository checkout
+
+```js
+const { generateChart } = require('./src/chart');
+
+const birth = {
+  system: 'ziwei',
+  date: '2000-08-16',
+  time: '14:30',
+  gender: 'female',
+  latitude: 0,
+  longitude: 120,
+  timeZone: 'Asia/Taipei',
+};
+
+const natal = generateChart(birth);
+console.log(natal.chart.palaces.length); // 12
+
+const batch = generateChart({ ...birth, ziweiOutput: 'batch', name: 'example' });
+console.log(batch.next().value.path);    // 本命/紫微.json
+batch.return();
+```
+
+`generateChart` returns a document for natal/horoscope modes and a synchronous
+`{ path, document }` iterator for batch mode. It does not write batch files.
+For filesystem export, use `writeZiweiBatch` from
+`./src/ziwei-batch-writer`, with the same input and a new destination.
+JavaScript options use `timeZone`, `ziweiOutput`, `targetDate`, `targetTime`
+and `outputDir` in place of the corresponding CLI flag names. These examples
+use repository source modules; a package-root import is not provided.
+
+### Project map
+
+| Location | Responsibility |
+| --- | --- |
+| `bin/ziwei-json.js` | CLI entry point and JSON/error streams |
+| `src/chart.js` | CLI input parsing and system/output selection |
+| `src/time.js` | Civil-time resolution, solar correction and period boundaries |
+| `src/ziwei.js` / `src/bazi.js` | Engine adapters and normalized natal data |
+| `src/ziwei-addon.js` | Natal relationships, flights and indexes |
+| `src/ziwei-horoscope.js` | Time scopes, overlays and scope relationships |
+| `src/ziwei-batch.js` / `src/ziwei-batch-writer.js` | Lifecycle generation, manifest validation and filesystem export |
+| `test/` | Synthetic fixtures, independent references and regression tests |
+| `docs/references/` / `docs/audits/` | Adopted rules, provenance and verification records |
+
+### Contributing
+
+For a calculation discrepancy, include a synthetic reproduction command,
+expected and actual fields, the engine conventions and a checkable reference.
+State whether the difference involves a calendar boundary, a table variant
+or a distinct school. For a code change, keep it focused and run `npm test`.
+See [AGENTS.md](AGENTS.md) for development and evidence-based analysis rules.
+
+Package metadata declares `ISC` in [package.json](package.json); a standalone
+`LICENSE` file has not yet been added. Upstream calculation libraries retain
+their own licenses.
