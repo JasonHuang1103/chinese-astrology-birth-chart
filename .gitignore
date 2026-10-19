@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+
+# Local chart exports and interpretation reports contain private data.
+output/
+outputs/
+generated/
+
+# Ignore JSON exports anywhere, including custom batch destinations.
+# Only package metadata and the reviewed synthetic reference fixture are public.
+*.json
+!/package.json
+!/package-lock.json
+!/test/fixtures/ziwei-independent-reference.json

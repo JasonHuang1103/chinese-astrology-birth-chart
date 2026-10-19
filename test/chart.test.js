@@ -60,3 +60,10 @@ test('accepts Bazi without gender and rejects an unsupported system', () => {
   assert.equal(parseBirthInput(baziFlags).system, 'bazi');
   assert.throws(() => parseBirthInput([...flags, '--system', 'both']), /system/);
 });
+
+test('rejects Ziwei dates before the engine Gregorian-calendar boundary', () => {
+  for (const date of ['1500-03-01', '1582-10-10']) {
+    const input = parseBirthInput(flags.map((value) => value === '2000-08-16' ? date : value));
+    assert.throws(() => generateChart(input), /Gregorian|1582-10-15/);
+  }
+});

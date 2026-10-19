@@ -1,0 +1,925 @@
+{
+  "description": "Independent, synthetic natal references. Expected data was derived from HKO civil/lunar tables, the transcribed classical rules below, and a separately identified pinned Fortel noble-star table, without using iztro, this project, or generated charts to produce expected data.",
+  "source_accessed": "2026-10-19",
+  "sources": {
+    "calendar": {
+      "publisher": "香港天文台",
+      "title": "公曆與農曆日期對照表（文字版本）",
+      "url": "https://www.hko.gov.hk/tc/gts/time/conversion1_text.htm",
+      "case_urls": "Each case links its exact HKO annual text table. June 15 and the preceding lunar month-start row were checked."
+    },
+    "rules": {
+      "title": "紫微斗數全書 卷二",
+      "edition": "維基文庫原文轉錄，固定修訂1963110；未據原刊影像校勘，不主張代表所有流派。",
+      "url": "https://zh.wikisource.org/w/index.php?title=紫微斗數全書/卷二&oldid=1963110",
+      "sections": [
+        "安身命例",
+        "起五行寅例",
+        "六十花甲子納音歌",
+        "水二／木三／金四／土五／火六局紫微圖",
+        "安天府圖",
+        "安南北斗諸星訣",
+        "安文昌文曲星訣",
+        "安左輔右弼星訣",
+        "安天魁天鉞訣",
+        "安祿存星訣",
+        "安擎羊陀羅二星訣",
+        "天空地劫訣",
+        "安祿權科忌四星變化訣",
+        "安大限訣",
+        "十二支星辰廟旺得利平不陷表",
+        "安天馬星訣"
+      ]
+    },
+    "independent_noble_table": {
+      "title": "airicyu/fortel-ziweidoushu official source, MinorStar.MINOR_STAR_BENEFACTOR_WOMAN",
+      "school": "中州派（repository README自述），不作古籍校勘依据",
+      "commit": "2620cc895395f9f6994abd4927e739d31015c67d",
+      "package_version": "1.3.4",
+      "url": "https://raw.githubusercontent.com/airicyu/fortel-ziweidoushu/2620cc895395f9f6994abd4927e739d31015c67d/src/model/minorStar.ts",
+      "supporting_urls": [
+        "https://raw.githubusercontent.com/airicyu/fortel-ziweidoushu/2620cc895395f9f6994abd4927e739d31015c67d/src/model/sky.ts",
+        "https://raw.githubusercontent.com/airicyu/fortel-ziweidoushu/2620cc895395f9f6994abd4927e739d31015c67d/src/model/ground.ts",
+        "https://raw.githubusercontent.com/airicyu/fortel-ziweidoushu/2620cc895395f9f6994abd4927e739d31015c67d/package.json"
+      ],
+      "derivation": "minorStar.ts lines 84–91 map year-sky indices through [7,8,9,9,7,8,7,2,5,5]. sky.ts defines 甲乙丙丁戊己庚辛壬癸 as indices 0..9, ground.ts defines 子丑寅卯辰巳午未申酉戌亥 as indices 0..11. Thus 丙(index2) and 丁(index3) each map to 9=酉. This is a direct source-table check; Fortel was neither installed nor executed.",
+      "independence": "Official package dependencies list only util; this table does not call iztro. Only the named noble-star values were checked here, not a full second-engine chart."
+    }
+  },
+  "method": [
+    "All cases use a non-leap lunar month and times at least 30 minutes inside the named two-hour period, at UTC+08 and longitude 120 degrees. They do not establish leap-month, late-Zi, target-period or historical-timezone correctness.",
+    "Life/body branches were counted from 寅 as first month, then backward/forward by the birth-hour branch. The palace stem was counted forward from the source’s five-tiger 寅 stem; its named 納音 determines the element class.",
+    "紫微 was read directly from each fixed five-element/day diagram (not computed by the application). 天府 was reflected across 寅/申 using the classical diagram. Each remaining major star was counted from the two anchors using 安南北斗諸星訣 and frozen as an absolute branch.",
+    "輔弼 follow month, 昌曲 and 空劫 follow hour, 魁鉞 and 祿羊陀 follow year stem; 天馬 follows the year-branch trine. The source’s 天空 in 天空地劫訣 corresponds to the modern 地空 name; it is distinct from the separately placed 天空 adjective star. The cited transcript literally reads 丙丁豬狗位 (天鉞戌), while the adopted table uses 酉; these two cases preserve 戌 in the classical expected data and separately identify Fortel-backed 酉.",
+    "Brightness checks are restricted to 紫微、天機、武曲, directly transcribed from the twelve-branch table. This does not independently certify every star brightness.",
+    "Year transformations use the classical table in 祿、權、科、忌 order. The 壬化科 discrepancy is explicitly excluded from a matching assertion and retained below. No full-chart equality or universal-school accuracy is claimed. The 辛-year 魁鉞 pair also differs and is retained as a named variant below.",
+    "火星、鈴星 and the 38 adjective stars are outside this independent fixture. Existing structural audits do not make their placements independently verified."
+  ],
+  "known_differences": [
+    {
+      "field": "birth_year_transformations[壬][科]",
+      "reference": "天府",
+      "default_engine": "左輔",
+      "reason": "The cited classical table says 壬梁紫府武; default iztro uses a different 壬 table. The 壬 fixture checks only 祿、權、忌 against the classic."
+    },
+    {
+      "field": "minor_star_branches[辛]",
+      "reference": {
+        "天魁": "寅",
+        "天鉞": "午"
+      },
+      "default_engine": {
+        "天魁": "午",
+        "天鉞": "寅"
+      },
+      "reason": "The cited transcript says 六辛逢虎馬 under 安天魁天鉞訣; the default engine uses the reversed pair. The 辛 fixture preserves the reference values, and a separate variant test records the difference."
+    },
+    {
+      "field": "minor_star_branches[丙丁][天鉞]",
+      "reference": "戌",
+      "default_engine": "酉",
+      "independent_fortel": "酉",
+      "reason": "The pinned Wikisource transcript says 丙丁豬狗位, not 豬雞位. Without a scanned-edition collation this cannot support the adopted 酉 value or be silently corrected as a typo. The two adopted values are instead independently supported by the separately pinned Fortel source table."
+    }
+  ],
+  "cases": [
+    {
+      "id": "hko-1984-ordinary-month",
+      "input": {
+        "date": "1984-06-15",
+        "time": "02:00",
+        "gender": "male",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1984c.txt",
+      "lunar": {
+        "year": 1984,
+        "month": 5,
+        "day": 16,
+        "is_leap": false,
+        "year_stem": "甲",
+        "year_branch": "子",
+        "hour_branch": "丑"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "己巳",
+        "nayin": "大林木",
+        "ziwei_diagram": "木三局，農曆16日 → 酉",
+        "tianfu_diagram": "紫微酉 → 天府未"
+      },
+      "expected": {
+        "soul_palace_branch": "巳",
+        "body_palace_branch": "未",
+        "life_palace_stem": "己",
+        "five_elements_class": "木三局",
+        "second_decadal_branch": "午",
+        "major_star_branches": {
+          "紫微": "酉",
+          "天機": "申",
+          "太陽": "午",
+          "武曲": "巳",
+          "天同": "辰",
+          "廉貞": "丑",
+          "天府": "未",
+          "太陰": "申",
+          "貪狼": "酉",
+          "巨門": "戌",
+          "天相": "亥",
+          "天梁": "子",
+          "七殺": "丑",
+          "破軍": "巳"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "酉",
+          "文曲": "巳",
+          "天魁": "丑",
+          "天鉞": "未",
+          "祿存": "寅",
+          "擎羊": "卯",
+          "陀羅": "丑",
+          "地空": "戌",
+          "地劫": "子",
+          "天馬": "寅"
+        },
+        "brightness": {
+          "紫微": "旺",
+          "天機": "得",
+          "武曲": "平"
+        },
+        "year_transformations": {
+          "祿": "廉貞",
+          "權": "破軍",
+          "科": "武曲",
+          "忌": "太陽"
+        },
+        "first_decadal_range": [
+          3,
+          12
+        ],
+        "second_decadal_range": [
+          13,
+          22
+        ]
+      }
+    },
+    {
+      "id": "hko-1985-ordinary-month",
+      "input": {
+        "date": "1985-06-15",
+        "time": "04:00",
+        "gender": "male",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1985c.txt",
+      "lunar": {
+        "year": 1985,
+        "month": 4,
+        "day": 27,
+        "is_leap": false,
+        "year_stem": "乙",
+        "year_branch": "丑",
+        "hour_branch": "寅"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "己卯",
+        "nayin": "城頭土",
+        "ziwei_diagram": "土五局，農曆27日 → 辰",
+        "tianfu_diagram": "紫微辰 → 天府子"
+      },
+      "expected": {
+        "soul_palace_branch": "卯",
+        "body_palace_branch": "未",
+        "life_palace_stem": "己",
+        "five_elements_class": "土五局",
+        "second_decadal_branch": "寅",
+        "major_star_branches": {
+          "紫微": "辰",
+          "天機": "卯",
+          "太陽": "丑",
+          "武曲": "子",
+          "天同": "亥",
+          "廉貞": "申",
+          "天府": "子",
+          "太陰": "丑",
+          "貪狼": "寅",
+          "巨門": "卯",
+          "天相": "辰",
+          "天梁": "巳",
+          "七殺": "午",
+          "破軍": "戌"
+        },
+        "minor_star_branches": {
+          "左輔": "未",
+          "右弼": "未",
+          "文昌": "申",
+          "文曲": "午",
+          "天魁": "子",
+          "天鉞": "申",
+          "祿存": "卯",
+          "擎羊": "辰",
+          "陀羅": "寅",
+          "地空": "酉",
+          "地劫": "丑",
+          "天馬": "亥"
+        },
+        "brightness": {
+          "紫微": "得",
+          "天機": "旺",
+          "武曲": "旺"
+        },
+        "year_transformations": {
+          "祿": "天機",
+          "權": "天梁",
+          "科": "紫微",
+          "忌": "太陰"
+        },
+        "first_decadal_range": [
+          5,
+          14
+        ],
+        "second_decadal_range": [
+          15,
+          24
+        ]
+      }
+    },
+    {
+      "id": "hko-1986-ordinary-month",
+      "input": {
+        "date": "1986-06-15",
+        "time": "06:00",
+        "gender": "female",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1986c.txt",
+      "lunar": {
+        "year": 1986,
+        "month": 5,
+        "day": 9,
+        "is_leap": false,
+        "year_stem": "丙",
+        "year_branch": "寅",
+        "hour_branch": "卯"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "辛卯",
+        "nayin": "松柏木",
+        "ziwei_diagram": "木三局，農曆9日 → 辰",
+        "tianfu_diagram": "紫微辰 → 天府子"
+      },
+      "expected": {
+        "soul_palace_branch": "卯",
+        "body_palace_branch": "酉",
+        "life_palace_stem": "辛",
+        "five_elements_class": "木三局",
+        "second_decadal_branch": "寅",
+        "major_star_branches": {
+          "紫微": "辰",
+          "天機": "卯",
+          "太陽": "丑",
+          "武曲": "子",
+          "天同": "亥",
+          "廉貞": "申",
+          "天府": "子",
+          "太陰": "丑",
+          "貪狼": "寅",
+          "巨門": "卯",
+          "天相": "辰",
+          "天梁": "巳",
+          "七殺": "午",
+          "破軍": "戌"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "未",
+          "文曲": "未",
+          "天魁": "亥",
+          "天鉞": "戌",
+          "祿存": "巳",
+          "擎羊": "午",
+          "陀羅": "辰",
+          "地空": "申",
+          "地劫": "寅",
+          "天馬": "申"
+        },
+        "brightness": {
+          "紫微": "得",
+          "天機": "旺",
+          "武曲": "旺"
+        },
+        "year_transformations": {
+          "祿": "天同",
+          "權": "天機",
+          "科": "文昌",
+          "忌": "廉貞"
+        },
+        "first_decadal_range": [
+          3,
+          12
+        ],
+        "second_decadal_range": [
+          13,
+          22
+        ]
+      },
+      "independent_minor_star_branches": {
+        "天鉞": "酉"
+      },
+      "independent_minor_source": "independent_noble_table"
+    },
+    {
+      "id": "hko-1987-ordinary-month",
+      "input": {
+        "date": "1987-06-15",
+        "time": "08:00",
+        "gender": "female",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1987c.txt",
+      "lunar": {
+        "year": 1987,
+        "month": 5,
+        "day": 20,
+        "is_leap": false,
+        "year_stem": "丁",
+        "year_branch": "卯",
+        "hour_branch": "辰"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "壬寅",
+        "nayin": "金箔金",
+        "ziwei_diagram": "金四局，農曆20日 → 午",
+        "tianfu_diagram": "紫微午 → 天府戌"
+      },
+      "expected": {
+        "soul_palace_branch": "寅",
+        "body_palace_branch": "戌",
+        "life_palace_stem": "壬",
+        "five_elements_class": "金四局",
+        "second_decadal_branch": "卯",
+        "major_star_branches": {
+          "紫微": "午",
+          "天機": "巳",
+          "太陽": "卯",
+          "武曲": "寅",
+          "天同": "丑",
+          "廉貞": "戌",
+          "天府": "戌",
+          "太陰": "亥",
+          "貪狼": "子",
+          "巨門": "丑",
+          "天相": "寅",
+          "天梁": "卯",
+          "七殺": "辰",
+          "破軍": "申"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "午",
+          "文曲": "申",
+          "天魁": "亥",
+          "天鉞": "戌",
+          "祿存": "午",
+          "擎羊": "未",
+          "陀羅": "巳",
+          "地空": "未",
+          "地劫": "卯",
+          "天馬": "巳"
+        },
+        "brightness": {
+          "紫微": "廟",
+          "天機": "平",
+          "武曲": "得"
+        },
+        "year_transformations": {
+          "祿": "太陰",
+          "權": "天同",
+          "科": "天機",
+          "忌": "巨門"
+        },
+        "first_decadal_range": [
+          4,
+          13
+        ],
+        "second_decadal_range": [
+          14,
+          23
+        ]
+      },
+      "independent_minor_star_branches": {
+        "天鉞": "酉"
+      },
+      "independent_minor_source": "independent_noble_table"
+    },
+    {
+      "id": "hko-1988-ordinary-month",
+      "input": {
+        "date": "1988-06-15",
+        "time": "10:00",
+        "gender": "male",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1988c.txt",
+      "lunar": {
+        "year": 1988,
+        "month": 5,
+        "day": 2,
+        "is_leap": false,
+        "year_stem": "戊",
+        "year_branch": "辰",
+        "hour_branch": "巳"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "乙丑",
+        "nayin": "海中金",
+        "ziwei_diagram": "金四局，農曆2日 → 辰",
+        "tianfu_diagram": "紫微辰 → 天府子"
+      },
+      "expected": {
+        "soul_palace_branch": "丑",
+        "body_palace_branch": "亥",
+        "life_palace_stem": "乙",
+        "five_elements_class": "金四局",
+        "second_decadal_branch": "寅",
+        "major_star_branches": {
+          "紫微": "辰",
+          "天機": "卯",
+          "太陽": "丑",
+          "武曲": "子",
+          "天同": "亥",
+          "廉貞": "申",
+          "天府": "子",
+          "太陰": "丑",
+          "貪狼": "寅",
+          "巨門": "卯",
+          "天相": "辰",
+          "天梁": "巳",
+          "七殺": "午",
+          "破軍": "戌"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "巳",
+          "文曲": "酉",
+          "天魁": "丑",
+          "天鉞": "未",
+          "祿存": "巳",
+          "擎羊": "午",
+          "陀羅": "辰",
+          "地空": "午",
+          "地劫": "辰",
+          "天馬": "寅"
+        },
+        "brightness": {
+          "紫微": "得",
+          "天機": "旺",
+          "武曲": "旺"
+        },
+        "year_transformations": {
+          "祿": "貪狼",
+          "權": "太陰",
+          "科": "右弼",
+          "忌": "天機"
+        },
+        "first_decadal_range": [
+          4,
+          13
+        ],
+        "second_decadal_range": [
+          14,
+          23
+        ]
+      }
+    },
+    {
+      "id": "hko-1989-ordinary-month",
+      "input": {
+        "date": "1989-06-15",
+        "time": "12:00",
+        "gender": "female",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1989c.txt",
+      "lunar": {
+        "year": 1989,
+        "month": 5,
+        "day": 12,
+        "is_leap": false,
+        "year_stem": "己",
+        "year_branch": "巳",
+        "hour_branch": "午"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "丙子",
+        "nayin": "澗下水",
+        "ziwei_diagram": "水二局，農曆12日 → 未",
+        "tianfu_diagram": "紫微未 → 天府酉"
+      },
+      "expected": {
+        "soul_palace_branch": "子",
+        "body_palace_branch": "子",
+        "life_palace_stem": "丙",
+        "five_elements_class": "水二局",
+        "second_decadal_branch": "丑",
+        "major_star_branches": {
+          "紫微": "未",
+          "天機": "午",
+          "太陽": "辰",
+          "武曲": "卯",
+          "天同": "寅",
+          "廉貞": "亥",
+          "天府": "酉",
+          "太陰": "戌",
+          "貪狼": "亥",
+          "巨門": "子",
+          "天相": "丑",
+          "天梁": "寅",
+          "七殺": "卯",
+          "破軍": "未"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "辰",
+          "文曲": "戌",
+          "天魁": "子",
+          "天鉞": "申",
+          "祿存": "午",
+          "擎羊": "未",
+          "陀羅": "巳",
+          "地空": "巳",
+          "地劫": "巳",
+          "天馬": "亥"
+        },
+        "brightness": {
+          "紫微": "廟",
+          "天機": "廟",
+          "武曲": "利"
+        },
+        "year_transformations": {
+          "祿": "武曲",
+          "權": "貪狼",
+          "科": "天梁",
+          "忌": "文曲"
+        },
+        "first_decadal_range": [
+          2,
+          11
+        ],
+        "second_decadal_range": [
+          12,
+          21
+        ]
+      }
+    },
+    {
+      "id": "hko-1990-ordinary-month",
+      "input": {
+        "date": "1990-06-15",
+        "time": "14:00",
+        "gender": "female",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1990c.txt",
+      "lunar": {
+        "year": 1990,
+        "month": 5,
+        "day": 23,
+        "is_leap": false,
+        "year_stem": "庚",
+        "year_branch": "午",
+        "hour_branch": "未"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "丁亥",
+        "nayin": "屋上土",
+        "ziwei_diagram": "土五局，農曆23日 → 申",
+        "tianfu_diagram": "紫微申 → 天府申"
+      },
+      "expected": {
+        "soul_palace_branch": "亥",
+        "body_palace_branch": "丑",
+        "life_palace_stem": "丁",
+        "five_elements_class": "土五局",
+        "second_decadal_branch": "戌",
+        "major_star_branches": {
+          "紫微": "申",
+          "天機": "未",
+          "太陽": "巳",
+          "武曲": "辰",
+          "天同": "卯",
+          "廉貞": "子",
+          "天府": "申",
+          "太陰": "酉",
+          "貪狼": "戌",
+          "巨門": "亥",
+          "天相": "子",
+          "天梁": "丑",
+          "七殺": "寅",
+          "破軍": "午"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "卯",
+          "文曲": "亥",
+          "天魁": "丑",
+          "天鉞": "未",
+          "祿存": "申",
+          "擎羊": "酉",
+          "陀羅": "未",
+          "地空": "辰",
+          "地劫": "午",
+          "天馬": "申"
+        },
+        "brightness": {
+          "紫微": "旺",
+          "天機": "陷",
+          "武曲": "廟"
+        },
+        "year_transformations": {
+          "祿": "太陽",
+          "權": "武曲",
+          "科": "太陰",
+          "忌": "天同"
+        },
+        "first_decadal_range": [
+          5,
+          14
+        ],
+        "second_decadal_range": [
+          15,
+          24
+        ]
+      }
+    },
+    {
+      "id": "hko-1991-ordinary-month",
+      "input": {
+        "date": "1991-06-15",
+        "time": "16:00",
+        "gender": "male",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1991c.txt",
+      "lunar": {
+        "year": 1991,
+        "month": 5,
+        "day": 4,
+        "is_leap": false,
+        "year_stem": "辛",
+        "year_branch": "未",
+        "hour_branch": "申"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "戊戌",
+        "nayin": "平地木",
+        "ziwei_diagram": "木三局，農曆4日 → 巳",
+        "tianfu_diagram": "紫微巳 → 天府亥"
+      },
+      "expected": {
+        "soul_palace_branch": "戌",
+        "body_palace_branch": "寅",
+        "life_palace_stem": "戊",
+        "five_elements_class": "木三局",
+        "second_decadal_branch": "酉",
+        "major_star_branches": {
+          "紫微": "巳",
+          "天機": "辰",
+          "太陽": "寅",
+          "武曲": "丑",
+          "天同": "子",
+          "廉貞": "酉",
+          "天府": "亥",
+          "太陰": "子",
+          "貪狼": "丑",
+          "巨門": "寅",
+          "天相": "卯",
+          "天梁": "辰",
+          "七殺": "巳",
+          "破軍": "酉"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "寅",
+          "文曲": "子",
+          "天魁": "寅",
+          "天鉞": "午",
+          "祿存": "酉",
+          "擎羊": "戌",
+          "陀羅": "申",
+          "地空": "卯",
+          "地劫": "未",
+          "天馬": "巳"
+        },
+        "brightness": {
+          "紫微": "旺",
+          "天機": "利",
+          "武曲": "廟"
+        },
+        "year_transformations": {
+          "祿": "巨門",
+          "權": "太陽",
+          "科": "文曲",
+          "忌": "文昌"
+        },
+        "first_decadal_range": [
+          3,
+          12
+        ],
+        "second_decadal_range": [
+          13,
+          22
+        ]
+      }
+    },
+    {
+      "id": "hko-1992-ordinary-month",
+      "input": {
+        "date": "1992-06-15",
+        "time": "18:00",
+        "gender": "male",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1992c.txt",
+      "lunar": {
+        "year": 1992,
+        "month": 5,
+        "day": 15,
+        "is_leap": false,
+        "year_stem": "壬",
+        "year_branch": "申",
+        "hour_branch": "酉"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "己酉",
+        "nayin": "大驛土",
+        "ziwei_diagram": "土五局，農曆15日 → 辰",
+        "tianfu_diagram": "紫微辰 → 天府子"
+      },
+      "expected": {
+        "soul_palace_branch": "酉",
+        "body_palace_branch": "卯",
+        "life_palace_stem": "己",
+        "five_elements_class": "土五局",
+        "second_decadal_branch": "戌",
+        "major_star_branches": {
+          "紫微": "辰",
+          "天機": "卯",
+          "太陽": "丑",
+          "武曲": "子",
+          "天同": "亥",
+          "廉貞": "申",
+          "天府": "子",
+          "太陰": "丑",
+          "貪狼": "寅",
+          "巨門": "卯",
+          "天相": "辰",
+          "天梁": "巳",
+          "七殺": "午",
+          "破軍": "戌"
+        },
+        "minor_star_branches": {
+          "左輔": "申",
+          "右弼": "午",
+          "文昌": "丑",
+          "文曲": "丑",
+          "天魁": "卯",
+          "天鉞": "巳",
+          "祿存": "亥",
+          "擎羊": "子",
+          "陀羅": "戌",
+          "地空": "寅",
+          "地劫": "申",
+          "天馬": "寅"
+        },
+        "brightness": {
+          "紫微": "得",
+          "天機": "旺",
+          "武曲": "旺"
+        },
+        "year_transformations": {
+          "祿": "天梁",
+          "權": "紫微",
+          "科": "天府",
+          "忌": "武曲"
+        },
+        "first_decadal_range": [
+          5,
+          14
+        ],
+        "second_decadal_range": [
+          15,
+          24
+        ]
+      }
+    },
+    {
+      "id": "hko-1993-ordinary-month",
+      "input": {
+        "date": "1993-06-15",
+        "time": "20:00",
+        "gender": "female",
+        "latitude": 0,
+        "longitude": 120,
+        "timeZone": "Asia/Taipei"
+      },
+      "calendar_source": "https://www.hko.gov.hk/tc/gts/time/calendar/text/files/T1993c.txt",
+      "lunar": {
+        "year": 1993,
+        "month": 4,
+        "day": 26,
+        "is_leap": false,
+        "year_stem": "癸",
+        "year_branch": "酉",
+        "hour_branch": "戌"
+      },
+      "derivation": {
+        "life_palace_ganzhi": "己未",
+        "nayin": "天上火",
+        "ziwei_diagram": "火六局，農曆26日 → 戌",
+        "tianfu_diagram": "紫微戌 → 天府午"
+      },
+      "expected": {
+        "soul_palace_branch": "未",
+        "body_palace_branch": "卯",
+        "life_palace_stem": "己",
+        "five_elements_class": "火六局",
+        "second_decadal_branch": "申",
+        "major_star_branches": {
+          "紫微": "戌",
+          "天機": "酉",
+          "太陽": "未",
+          "武曲": "午",
+          "天同": "巳",
+          "廉貞": "寅",
+          "天府": "午",
+          "太陰": "未",
+          "貪狼": "申",
+          "巨門": "酉",
+          "天相": "戌",
+          "天梁": "亥",
+          "七殺": "子",
+          "破軍": "辰"
+        },
+        "minor_star_branches": {
+          "左輔": "未",
+          "右弼": "未",
+          "文昌": "子",
+          "文曲": "寅",
+          "天魁": "卯",
+          "天鉞": "巳",
+          "祿存": "子",
+          "擎羊": "丑",
+          "陀羅": "亥",
+          "地空": "丑",
+          "地劫": "酉",
+          "天馬": "亥"
+        },
+        "brightness": {
+          "紫微": "得",
+          "天機": "旺",
+          "武曲": "旺"
+        },
+        "year_transformations": {
+          "祿": "破軍",
+          "權": "巨門",
+          "科": "太陰",
+          "忌": "貪狼"
+        },
+        "first_decadal_range": [
+          6,
+          15
+        ],
+        "second_decadal_range": [
+          16,
+          25
+        ]
+      }
+    }
+  ]
+}

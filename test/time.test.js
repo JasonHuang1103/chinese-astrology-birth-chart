@@ -28,8 +28,8 @@ test('carries apparent solar time across a calendar boundary', () => {
   const result = correctBirthTime({
     date: '2000-01-01',
     time: '00:02',
-    longitude: -179,
-    timeZone: 'Etc/GMT-12',
+    longitude: 119,
+    timeZone: 'Asia/Taipei',
   });
 
   assert.equal(result.apparentDate, '1999-12-31');

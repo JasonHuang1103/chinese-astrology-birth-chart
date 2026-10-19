@@ -17,7 +17,7 @@
 - Bazi reuses the apparent-solar-time correction and records `lunar-typescript` day-boundary convention `sect: 2`.
 - Bazi output contains natal data only: no prose, luck cycles, or transit data.
 - JSON keys are English; Bazi values are traditional Chinese.
-- Do not stage, commit, or otherwise operate on Git because `/Users/jason` is the unrelated Git root.
+- At the time this plan was drafted, do not stage, commit, or otherwise operate on Git because its Git root was an unrelated home-directory repository.
 
 ---
 

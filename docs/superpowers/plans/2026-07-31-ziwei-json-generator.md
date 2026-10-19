@@ -15,7 +15,7 @@
 - No network or city/country geocoding; latitude is provenance only, while longitude and zone offset determine the apparent-solar-time correction.
 - Use `zh-TW` output from `iztro`; retain English JSON keys and traditional-Chinese values.
 - JSON is written to stdout only; validation failures are actionable messages on stderr and exit nonzero.
-- Do not commit from this project: its Git root is `/Users/jason`, an unrelated uncommitted home-directory repository.
+- At the time this plan was drafted, do not commit from this project: its Git root was an unrelated uncommitted home-directory repository.
 
 ---
 
@@ -175,7 +175,7 @@
 
 - [x] **Step 5: Run the complete suite and record the project-local change**
 
-  Run: `npm test && git -C /Users/jason/Desktop/my-ziwei-chart status --short`
+  Run from the project directory: `npm test && git status --short`
 
   Expected: tests pass; do not stage or commit because Git resolves to the unrelated home repository.
 
@@ -412,6 +412,6 @@
 
 - [x] **Step 5: Run final verification and inspect the focused diff**
 
-  Run: `npm test && git -C /Users/jason/Desktop/my-ziwei-chart diff -- package.json src bin test README.md docs`
+  Run from the project directory: `npm test && git diff -- package.json src bin test README.md docs`
 
   Expected: full suite passes; diff is limited to the generator, tests, README, and approved design/plan documents.
